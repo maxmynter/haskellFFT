@@ -3,6 +3,7 @@ module PolynomialTest (polynomialTests) where
 import Fft
 import Instances ()
 import Test.QuickCheck
+import TestUtils (runNamedTest)
 
 prop_splitRecombine :: Polynomial -> Property
 prop_splitRecombine p@(Polynomial cs) =
@@ -25,7 +26,12 @@ interleave (x : xs) (y : ys) = x : y : interleave xs ys
 interleave [] ys = ys
 interleave xs [] = xs
 
-polynomialTests :: IO ()
+polynomialTests :: IO Bool
 polynomialTests = do
   putStrLn "Testing Polynomial"
-  quickCheck prop_splitRecombine
+  putStrLn "---------------"
+  results <-
+    sequence
+      [ runNamedTest "Exponential Identity" prop_splitRecombine
+      ]
+  return (and results)

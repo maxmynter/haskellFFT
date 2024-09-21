@@ -14,7 +14,7 @@ type Mag = Double
 
 type Phi = Double
 
-data Complex = Cartesian Re Im | Polar Mag Phi deriving (Eq)
+data Complex = Cartesian Re Im | Polar Mag Phi
 
 i :: Complex
 i = Cartesian 0 1
@@ -38,8 +38,8 @@ normalizePhase p
   | otherwise = p
 
 phase :: Complex -> Double
-phase (Polar _ phi) = normalizePhase phi
-phase (Cartesian r img) = normalizePhase $ atan2 img r
+phase (Polar r phi) = if r == 0 then 0 else normalizePhase phi
+phase z@(Cartesian r img) = if mag z == 0 then 0 else normalizePhase $ atan2 img r
 
 asCartesian :: Complex -> Complex
 asCartesian c = Cartesian (real c) (im c)
@@ -57,7 +57,7 @@ instance Num Complex where
   (+) (Cartesian a b) (Cartesian r img) = Cartesian (a + r) (b + img)
   (+) c1 c2 = asCartesian c1 + asCartesian c2
 
-  (*) (Polar r p) (Polar m t) = Polar (r * m) (p + t)
+  (*) (Polar r p) (Polar m t) = Polar (r * m) (normalizePhase $ p + t)
   (*) c1 c2 = asPolar c1 * asPolar c2
 
   negate (Cartesian a b) = Cartesian (-a) (-b)
@@ -73,9 +73,16 @@ instance Show Complex where
   show (Cartesian r img) = show r ++ " + " ++ show img ++ "i"
   show (Polar r p) = show r ++ "∠" ++ show p
 
+instance Eq Complex where
+  (==) (Cartesian r1 i1) (Cartesian r2 i2) = r1 == r2 && i1 == i2
+  (==) (Polar r1 p1) (Polar r2 p2)
+    | r1 == 0 && r2 == 0 = True
+    | otherwise = r1 == r2 && normalizePhase p1 == normalizePhase p2
+  (==) z1 z2 = asPolar z1 == asPolar z2
+
 instance Floating Complex where
   pi = Cartesian pi 0
-  exp z = Polar (exp (mag z)) (phase z)
+  exp z = Polar (exp (real z)) (im z)
   log z = Cartesian (log $ sqrt $ a * a + b * b) (atan2 b a)
     where
       a = real z
