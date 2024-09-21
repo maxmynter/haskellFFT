@@ -27,7 +27,11 @@ executable fft-haskell
 test-suite fft-haskell-test
     import: warnings
     type: exitcode-stdio-1.0
-    main-is: PolynomialTest.hs
+    main-is: Spec.hs
+    other-modules: 
+                     PolynomialTest
+                     ComplexTest
+                     Instances
     build-depends:    base ^>=4.19.1.0
                     , fft-haskell
                     , QuickCheck

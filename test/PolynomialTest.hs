@@ -1,14 +1,8 @@
-module Main where
+module PolynomialTest (polynomialTests) where
 
 import Fft
-import System.Exit (exitFailure)
+import Instances ()
 import Test.QuickCheck
-
-instance Arbitrary Complex where
-  arbitrary = Complex <$> arbitrary <*> arbitrary
-
-instance Arbitrary Polynomial where
-  arbitrary = Polynomial <$> arbitrary
 
 prop_splitRecombine :: Polynomial -> Property
 prop_splitRecombine p@(Polynomial cs) =
@@ -31,12 +25,7 @@ interleave (x : xs) (y : ys) = x : y : interleave xs ys
 interleave [] ys = ys
 interleave xs [] = xs
 
-main :: IO ()
-main = do
+polynomialTests :: IO ()
+polynomialTests = do
   putStrLn "Testing Polynomial"
-  result <- quickCheckResult prop_splitRecombine
-  case result of
-    Success {} -> putStrLn "All tests passed!"
-    _ -> do
-      putStrLn "Test failed!"
-      exitFailure
+  quickCheck prop_splitRecombine

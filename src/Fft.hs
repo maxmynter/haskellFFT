@@ -31,9 +31,15 @@ mag :: Complex -> Double
 mag (Cartesian r img) = sqrt $ r * r + img * img
 mag (Polar m _) = m
 
+normalizePhase :: Phi -> Phi
+normalizePhase p
+  | p > pi = normalizePhase (p - 2 * pi)
+  | p <= -pi = normalizePhase (p + 2 * pi)
+  | otherwise = p
+
 phase :: Complex -> Double
-phase (Polar _ phi) = phi
-phase (Cartesian r img) = atan2 img r
+phase (Polar _ phi) = normalizePhase phi
+phase (Cartesian r img) = normalizePhase $ atan2 img r
 
 asCartesian :: Complex -> Complex
 asCartesian c = Cartesian (real c) (im c)
@@ -50,12 +56,16 @@ complexFromDouble d = Cartesian d 0
 instance Num Complex where
   (+) (Cartesian a b) (Cartesian r img) = Cartesian (a + r) (b + img)
   (+) c1 c2 = asCartesian c1 + asCartesian c2
+
   (*) (Polar r p) (Polar m t) = Polar (r * m) (p + t)
   (*) c1 c2 = asPolar c1 * asPolar c2
+
   negate (Cartesian a b) = Cartesian (-a) (-b)
   negate (Polar r p) = Polar (-r) p
-  signum c@(Cartesian a b) = let m = mag c in Cartesian (a / m) (b / m)
-  signum cp@(Polar _ _) = signum $ asCartesian $ signum cp
+
+  signum c@(Cartesian a b) = let m = mag c in if m < 1e-6 then Cartesian 0 0 else Cartesian (a / m) (b / m)
+  signum (Polar r p) = if r < 1e-6 then Cartesian 0 0 else Polar 1 p
+
   fromInteger n = Cartesian (fromInteger n) 0
   abs c = Cartesian (mag c) 0
 
@@ -65,13 +75,39 @@ instance Show Complex where
 
 instance Floating Complex where
   pi = Cartesian pi 0
-  exp (Cartesian a b) = Polar (exp a) b
-  log (Cartesian a b) = Cartesian (log $ sqrt $ a * a + b * b) (atan2 b a)
-  sin (Cartesian a b) = Cartesian (sin a * cosh b) (cos a * sinh b)
-  cos (Cartesian a b) = Cartesian (cos a * cosh b) (-sin a * sinh b)
+  exp z = Polar (exp (mag z)) (phase z)
+  log z = Cartesian (log $ sqrt $ a * a + b * b) (atan2 b a)
+    where
+      a = real z
+      b = im z
+  sin z = Cartesian (sin a * cosh b) (cos a * sinh b)
+    where
+      a = real z
+      b = im z
+  cos z = Cartesian (cos a * cosh b) (-(sin a * sinh b))
+    where
+      a = real z
+      b = im z
+  sinh z = Cartesian (sinh a * cos b) (cosh a * sin b)
+    where
+      a = real z
+      b = im z
+  cosh z = Cartesian (cosh a * cos b) (sinh a * sin b)
+    where
+      a = real z
+      b = im z
+  atan z = i / 2 * log ((i + z) / (i - z))
+  asinh z = log (z + sqrt (z * z + 1))
+  acosh z = log (z + sqrt (z * z - 1))
+  atanh z = log ((1 + z) / (1 - z)) / 2
+  asin z = -(i * log (i * z + sqrt (1 - z * z)))
+  acos z = pi / 2 - asin z
 
 instance Fractional Complex where
   (/) (Cartesian a b) (Cartesian c d) = let denum = c * c + d * d in Cartesian ((a * c + b * d) / denum) ((b * c - a * d) / denum)
+  (/) (Polar r p) (Polar m t) = Polar (r / m) (normalizePhase (p - t))
+  (/) c1 c2 = asCartesian c1 / asCartesian c2
+  fromRational r = Cartesian (fromRational r) 0
 
 splitPolynomial :: Polynomial -> (EvenPolynomial, OddPolynomial)
 splitPolynomial (Polynomial cs) = (Polynomial (evenPart cs), Polynomial (oddPart cs))
