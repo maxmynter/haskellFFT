@@ -64,14 +64,14 @@ instance Num Complex where
   negate (Polar r p) = Polar (-r) p
 
   signum c@(Cartesian a b) = let m = mag c in if m < 1e-6 then Cartesian 0 0 else Cartesian (a / m) (b / m)
-  signum (Polar r p) = if r < 1e-6 then Cartesian 0 0 else Polar 1 p
+  signum p@(Polar _ _) = signum $ asCartesian p
 
   fromInteger n = Cartesian (fromInteger n) 0
   abs c = Cartesian (mag c) 0
 
 instance Show Complex where
   show (Cartesian r img) = show r ++ " + " ++ show img ++ "i"
-  show (Polar r p) = show r ++ "∠" ++ show p
+  show (Polar r p) = show r ++ "∠(rad)" ++ show p
 
 instance Eq Complex where
   (==) (Cartesian r1 i1) (Cartesian r2 i2) = r1 == r2 && i1 == i2
