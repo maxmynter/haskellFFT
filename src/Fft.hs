@@ -132,4 +132,12 @@ unityRoots n = [exp ((2 * complexFromDouble pi * complexFromInt k * i) / complex
 
 fft :: Polynomial -> Polynomial
 fft p@(Polynomial []) = p
-fft cs = undefined
+fft p@(Polynomial cs) =
+  let (evens, odds) = splitPolynomial p
+      n = length cs `div` 2
+      Polynomial xEven = fft evens
+      Polynomial xOdds = fft odds
+      roots = unityRoots n
+   in Polynomial $
+        [xEven !! k + roots !! k * xOdds !! k | k <- [0 .. n - 1]]
+          ++ [xEven !! k - roots !! k * xOdds !! k | k <- [0 .. n - 1]]
