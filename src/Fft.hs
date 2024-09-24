@@ -128,16 +128,19 @@ splitPolynomial (Polynomial cs) = (Polynomial (evenPart cs), Polynomial (oddPart
     oddPart (_ : y : ys) = y : oddPart ys
 
 unityRoots :: Int -> [Complex]
-unityRoots n = [exp ((2 * complexFromDouble pi * complexFromInt k * i) / complexFromInt n) | k <- [0 .. (n - 1)]]
+unityRoots n = [exp (((-2) * complexFromDouble pi * complexFromInt k * i) / complexFromInt n) | k <- [0 .. (n - 1)]]
 
 fft :: Polynomial -> Polynomial
 fft p@(Polynomial []) = p
+fft p@(Polynomial [_]) = p
 fft p@(Polynomial cs) =
   let (evens, odds) = splitPolynomial p
-      n = length cs `div` 2
       Polynomial xEven = fft evens
       Polynomial xOdds = fft odds
+      n = length cs
+      m = length xEven
       roots = unityRoots n
+      combine op k = xEven !! k `op` (roots !! k * xOdds !! k)
    in Polynomial $
-        [xEven !! k + roots !! k * xOdds !! k | k <- [0 .. n - 1]]
-          ++ [xEven !! k - roots !! k * xOdds !! k | k <- [0 .. n - 1]]
+        [combine (+) k | k <- [0 .. m - 1]]
+          ++ [combine (-) k | k <- [0 .. m - 1]]

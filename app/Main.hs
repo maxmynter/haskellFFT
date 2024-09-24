@@ -1,8 +1,8 @@
 module Main where
 
 import Fft
-import Test.HUnit
 import System.Exit (exitFailure, exitSuccess)
+import Test.HUnit
 
 -- Generate a simple polynomial for testing
 testPolynomial :: Polynomial
@@ -10,8 +10,8 @@ testPolynomial = Polynomial [complexFromInt 1, complexFromInt 2, complexFromInt 
 
 -- Expected result after FFT
 expectedFftResult :: [Complex]
-expectedFftResult = [
-    Cartesian 10 0,
+expectedFftResult =
+  [ Cartesian 10 0,
     Cartesian (-2) 2,
     Cartesian (-2) 0,
     Cartesian (-2) (-2)
@@ -37,10 +37,41 @@ testFft = TestCase $ do
 tests :: Test
 tests = TestList [TestLabel "FFT Test" testFft]
 
--- Main function to run tests
+-- Function to print FFT results
+printFftResults :: Polynomial -> IO ()
+printFftResults poly = do
+  putStrLn "Input polynomial:"
+  print poly
+  putStrLn "FFT result:"
+  print $ fft poly
+
+-- Function to print comparison of expected and actual results
+printComparison :: [Complex] -> [Complex] -> IO ()
+printComparison expected actual = do
+  putStrLn "Comparison of expected and actual results:"
+  mapM_ printComparisonLine $ zip expected actual
+  where
+    printComparisonLine (e, a) = do
+      putStrLn $
+        "Expected: "
+          ++ show e
+          ++ ", Actual: "
+          ++ show a
+          ++ ", Equal within epsilon: "
+          ++ show (complexApproxEqual e a)
+
+-- Main function to run tests and print results
 main :: IO ()
 main = do
-    counts <- runTestTT tests
-    if errors counts + failures counts == 0
-        then exitSuccess
-        else exitFailure
+  -- Print FFT results
+  printFftResults testPolynomial
+
+  -- Print comparison
+  let Polynomial result = fft testPolynomial
+  printComparison expectedFftResult result
+
+  -- Run tests
+  counts <- runTestTT tests
+  if errors counts + failures counts == 0
+    then exitSuccess
+    else exitFailure
